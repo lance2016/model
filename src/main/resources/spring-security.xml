@@ -4,21 +4,69 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 						http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
 
+	<!--过滤自定义登录请求页-->
 	<http pattern="/loginPage" security="none"></http>
-
+	<!--过滤静态文件-->
+	<http pattern="/statics/**" security="none"></http>
 	<http auto-config="true" use-expressions="true">
-		<intercept-url pattern="/*" access="hasRole('ROLE_USER')" />
-		<form-login login-page="/loginPage" login-processing-url="/login" always-use-default-target="true"
-					default-target-url="/welcome" authentication-failure-url="/loginPage?error=error" />
+		<intercept-url pattern="/**" access="hasAnyRole('ROLE_USER','ROLE_ADMIN')" />
+		<form-login login-page="/loginPage"
+					login-processing-url="/login"
+					always-use-default-target="true"
+					default-target-url="/welcome"
+					authentication-failure-url="/loginPage?error=error" />
+		<logout logout-url="/logout" logout-success-url="/loginPage" invalidate-session="true"/>
+		<remember-me key="authorition"/>
+		<access-denied-handler error-page="/403"/>
 		<csrf disabled="true"/>
 	</http>
+	<!--1. login-page 自定义登录页url,默认为/login-->
+	<!--2. login-processing-url 登录请求拦截的url,也就是form表单提交时指定的action-->
+	<!--3. default-target-url 默认登录成功后跳转的url-->
+	<!--4. always-use-default-target 是否总是使用默认的登录成功后跳转url-->
+	<!--5. authentication-failure-url 登录失败后跳转的url-->
+	<!--6. username-parameter 用户名的请求字段 默认为userName-->
+	<!--7. password-parameter 密码的请求字段 默认为password-->
+	<!--8. authentication-success-handler-ref 指向一个AuthenticationSuccessHandler用于处理认证成功的请求,不能和default-target-url还有always-use-default-target同时使用-->
+	<!--9. authentication-success-forward-url 用于authentication-failure-handler-ref-->
+	<!--10. authentication-failure-handler-ref 指向一个AuthenticationFailureHandler用于处理失败的认证请求-->
+	<!--11. authentication-failure-forward-url 用于authentication-failure-handler-ref-->
+	<!--12. authentication-details-source-ref 指向一个AuthenticationDetailsSource,在认证过滤器中使用-->
+
+
+	<!--remember me-->
+	<!--remember-me属性是spring security命名空间中实现自动登录的专属配置项,它有如下属性-->
+	<!--1. key：这个”key”属性用来辨别分辨不同项目的cookie-->
+	<!--2. authentication-success-handler-ref 指向一个AuthenticationSuccessHandler-->
+	<!--3. data-source-ref 指向一个DataSource数据源-->
+	<!--4. remember-me-cookie：cookie存放的名称.默认为’remember-me’.-->
+	<!--5. remember-me-parameter：触发自动登录的请求参数名称.默认为’remember-me’.-->
+	<!--6. services-alias：声明一个内部定义的RememberMeServices的bean的别名,提供给程序的其他bean使用-->
+	<!--7. services-ref：指向一个RememberMeServices,可以自定义实现自己的自动登录逻辑-->
+	<!--8. token-repository-ref：指向一个PersistentTokenRepository bean,用来实现持久化令牌的自动登录-->
+	<!--9. token-validity-seconds：cookie存在的时间周期,单位为秒-->
+	<!--10. use-secure-cookie：是否设置”secure”标志,具体使用不详-->
+	<!--11. user-service-ref：指向一个UserDetailsService的bean-->
+
+
+	<!---->
+	<!--<authentication-manager alias="authenticationManager">-->
+		<!--<authentication-provider>-->
+			<!--<user-service>-->
+				<!--<user authorities="ROLE_USER" name="lance" password="1" />-->
+			<!--</user-service>-->
+		<!--</authentication-provider>-->
+	<!--</authentication-manager>-->
 
 
 	<authentication-manager alias="authenticationManager">
 		<authentication-provider>
-			<user-service>
-				<user authorities="ROLE_USER" name="lance" password="1" />
-			</user-service>
+			<jdbc-user-service data-source-ref="dataSource"
+							   users-by-username-query="select username,password, enabled from users where username=?"
+							   authorities-by-username-query="select  username,  role from user_roles where username=?"
+
+			/>
+
 		</authentication-provider>
 	</authentication-manager>
 
